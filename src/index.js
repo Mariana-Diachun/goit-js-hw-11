@@ -7,41 +7,74 @@ import { getPhotos } from './getPhotos.js';
 import { refs } from './refs.js';
 import { renderPhotoCard } from './renderPhotoCard.js';
 
-// const apiKey = '29855363-01552555bb9c5e3aa2475f468';
+let searchQuery = null;
+let photos = {};
 
 refs.form.addEventListener('submit', onButtonSearch);
 
 function onButtonSearch(evt) {
   evt.preventDefault();
+
   const form = evt.currentTarget;
-  const searchQuery = form.elements.searchQuery.value;
+  searchQuery = form.elements.searchQuery.value;
   if (!searchQuery) {
     refs.galleryContainer.innerHTML = '';
   }
-
-  axios
-    .get(getPhotos(searchQuery))
-    .then(renderPhotoCard)
-    .catch(error => {
-      console.log(error);
-    });
+  getPhotos(searchQuery);
+  renderingCards(photos);
 }
 
-function renderPhotoCard(photos) {
+function renderingCards(photos) {
   if (photos.length < 0) {
-    onError();
+    onSearchError();
   } else {
     const photoMarkup = renderPhotoCard(photos);
     refs.galleryContainer.innerHTML(photoMarkup);
   }
 }
+function renderPhotoCard(photos) {
+  return photos
+    .map(
+      ({
+        webformatURL,
+        largeImageURL,
+        tags,
+        likes,
+        views,
+        comments,
+        downloads,
+      }) => {
+        return `
+        <div class="photo-card">
+        <a class="photo-item" src="${largeImageURL}">
+  <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+  </a>
+  <div class="info">
+    <p class="info-item">
+      <b>Likes</b> ${likes}
+    </p>
+    <p class="info-item">
+      <b>Views</b> ${views}
+    </p>
+    <p class="info-item">
+      <b>Comments</b> ${comments}
+    </p>
+    <p class="info-item">
+      <b>Downloads</b> ${downloads}
+    </p>
+  </div>
+</div>`;
+      }
+    )
+    .join('');
+}
 
-new SimpleLightbox('.gallery a', {
-  captionsData: 'alt',
-  captionsDelay: 250,
-});
+// new SimpleLightbox('.gallery a', {
+//   captionsData: 'alt',
+//   captionsDelay: 250,
+// });
 
-function onError() {
+function onSearchError() {
   Notiflix.Notify.failure(
     'Sorry, there are no images matching your search query. Please try again.',
     {
