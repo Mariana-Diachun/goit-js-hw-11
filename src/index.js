@@ -5,7 +5,6 @@ import SimpleLightbox from 'simplelightbox/dist/simple-lightbox.esm';
 import Notiflix from 'notiflix';
 import { getPhotos } from './getPhotos.js';
 import { refs } from './refs.js';
-import { renderPhotoCard } from './renderPhotoCard.js';
 
 let searchQuery = null;
 let photos = {};
