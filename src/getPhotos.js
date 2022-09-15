@@ -10,6 +10,7 @@ export function getPhotos(searchQuery) {
     )
     .then(response => {
       photos = response.data.hits;
-      return console.log(photos);
+      // return photos;
+      console.log(photos);
     });
 }
