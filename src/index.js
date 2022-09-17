@@ -3,50 +3,52 @@ import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
 import SimpleLightbox from 'simplelightbox/dist/simple-lightbox.esm';
 import Notiflix from 'notiflix';
-import { getPhotos } from './getPhotos.js';
+// import { getPhotos } from './getPhotos.js';
 import { refs } from './refs.js';
 
-// let searchQuery = null;
-// let photos = {};
-const BASE_URL = 'https://pixabay.com/api/';
-const apiKey = '29855363-01552555bb9c5e3aa2475f468';
+let searchQuery = '';
 
 refs.form.addEventListener('submit', onButtonSearch);
 
 function onButtonSearch(evt) {
   evt.preventDefault();
 
-  const form = evt.currentTarget;
-  const searchQuery = form.elements.searchQuery.value;
+  searchQuery = evt.target.elements.searchQuery.value.trim();
+  getNewPhotos();
+
   if (!searchQuery) {
-    refs.galleryContainer.innerHTML = '';
+    refs.galleryContainer = '';
   }
-  function getPhotos(searchQuery) {
-    axios
-      .get(
-        `${BASE_URL}/?key=${apiKey}&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true`
-      )
-      .then(response => {
-        photos = response.data.hits;
-        // return photos;
-        console.log(photos);
-      });
-  }
-  // getPhotos()
-  //   .then(renderingCards)
-  //   .catch(error => console.log(error));
 }
 
-function renderingCards({ hits }) {
-  if (photos.length < 0) {
-    onSearchError();
-  } else {
-    const photoMarkup = renderPhotoCard(photos);
-    refs.galleryContainer.innerHTML(photoMarkup);
+function getNewPhotos() {
+  getPhotos()
+    .then(({ data }) => {
+      renderingCards(data);
+    })
+    .catch(onError());
+}
+
+async function getPhotos() {
+  const BASE_URL = 'https://pixabay.com/api';
+  const apiKey = '29855363-01552555bb9c5e3aa2475f468';
+  const PARAMS =
+    'per_page=40&orientation=horizontal&image_type=photo&safesearch=true';
+  try {
+    const url = `${BASE_URL}/?key=${apiKey}&q=${searchQuery}&page=1&${PARAMS}`;
+    const response = await axios.get(url);
+    return response;
+  } catch (error) {
+    console.log(error);
   }
 }
-function renderPhotoCard(photos) {
-  return photos
+
+function renderingCards(data) {
+  refs.galleryContainer.insertAdjacentHTML('beforeend', renderPhotoCard(data));
+}
+
+function renderPhotoCard({ hits }) {
+  return hits
     .map(
       ({
         webformatURL,
@@ -58,10 +60,9 @@ function renderPhotoCard(photos) {
         downloads,
       }) => {
         return `
-        <div class="photo-card">
         <a class="photo-item" src="${largeImageURL}">
-  <img src="${webformatURL}" alt="${tags}" loading="lazy" />
-  </a>
+        <div class="photo-card">
+  <img class="gallery-img" src="${webformatURL}" alt="${tags}" loading="lazy" />
   <div class="info">
     <p class="info-item">
       <b>Likes</b> ${likes}
@@ -76,22 +77,18 @@ function renderPhotoCard(photos) {
       <b>Downloads</b> ${downloads}
     </p>
   </div>
-</div>`;
+</div>
+</a>`;
       }
     )
     .join('');
 }
-
-// new SimpleLightbox('.gallery a', {
-//   captionsData: 'alt',
-//   captionsDelay: 250,
-// });
-
-function onSearchError() {
-  Notiflix.Notify.failure(
-    'Sorry, there are no images matching your search query. Please try again.',
-    {
-      timeout: 2000,
-    }
+function onError() {
+  return Notiflix.Notify.failure(
+    'Sorry, there are no images matching your search query. Please try again.'
   );
 }
+new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionsDelay: 250,
+});
