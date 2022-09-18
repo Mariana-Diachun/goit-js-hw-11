@@ -1,53 +1,43 @@
 import './css/styles.css';
-import axios from 'axios';
 import SimpleLightbox from 'simplelightbox';
-import SimpleLightbox from 'simplelightbox/dist/simple-lightbox.esm';
-import Notiflix from 'notiflix';
-// import { getPhotos } from './getPhotos.js';
+import 'simplelightbox/dist/simple-lightbox.min.css';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import { refs } from './refs.js';
+import FetchImages from './fetchImages.js';
 
-let searchQuery = '';
+const fetchImages = new FetchImages();
 
-refs.form.addEventListener('submit', onButtonSearch);
+refs.form.addEventListener('submit', onFormSubmit);
+refs.loadMoreBtn.addEventListener('click', onButtonLoadMore);
 
-function onButtonSearch(evt) {
+function onFormSubmit(evt) {
   evt.preventDefault();
+  clearPhotoscontainer();
 
-  searchQuery = evt.target.elements.searchQuery.value.trim();
-  getNewPhotos();
-
-  if (!searchQuery) {
-    refs.galleryContainer = '';
+  fetchImages.query = evt.currentTarget.elements.searchQuery.value;
+  fetchImages.resetPage();
+  if (fetchImages.query === '') {
+    return Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.'
+    );
   }
+  fetchImages.getPhotos().then(renderingCards);
 }
 
-function getNewPhotos() {
-  getPhotos()
-    .then(({ data }) => {
-      renderingCards(data);
-    })
-    .catch(onError());
+function onButtonLoadMore(evt) {
+  evt.preventDefault();
+  fetchImages.incrementPage();
+  fetchImages
+    .getPhotos()
+    .then(renderingCards)
+    .catch(error => console.log(error));
 }
 
-async function getPhotos() {
-  const BASE_URL = 'https://pixabay.com/api';
-  const apiKey = '29855363-01552555bb9c5e3aa2475f468';
-  const PARAMS =
-    'per_page=40&orientation=horizontal&image_type=photo&safesearch=true';
-  try {
-    const url = `${BASE_URL}/?key=${apiKey}&q=${searchQuery}&page=1&${PARAMS}`;
-    const response = await axios.get(url);
-    return response;
-  } catch (error) {
-    console.log(error);
-  }
+function renderingCards(hits) {
+  refs.galleryContainer.insertAdjacentHTML('beforeend', renderPhotoCard(hits));
 }
 
-function renderingCards(data) {
-  refs.galleryContainer.insertAdjacentHTML('beforeend', renderPhotoCard(data));
-}
-
-function renderPhotoCard({ hits }) {
+function renderPhotoCard(hits) {
   return hits
     .map(
       ({
@@ -60,35 +50,43 @@ function renderPhotoCard({ hits }) {
         downloads,
       }) => {
         return `
-        <a class="photo-item" src="${largeImageURL}">
-        <div class="photo-card">
-  <img class="gallery-img" src="${webformatURL}" alt="${tags}" loading="lazy" />
-  <div class="info">
-    <p class="info-item">
-      <b>Likes</b> ${likes}
-    </p>
-    <p class="info-item">
-      <b>Views</b> ${views}
-    </p>
-    <p class="info-item">
-      <b>Comments</b> ${comments}
-    </p>
-    <p class="info-item">
-      <b>Downloads</b> ${downloads}
-    </p>
-  </div>
-</div>
-</a>`;
+        <li class="photo-card">
+        <a class="gallery__link" href="${largeImageURL}">
+            <img src="${webformatURL}" alt="${tags}" loading="lazy" class = "gallery__image" />
+            
+            <ul class="info">
+                <li class="info-item">
+                <b>Likes</b>
+                <span>${likes}</span>
+                </li>
+                <li class="info-item">
+                <b>Views</b>
+                <span>${views}</span>
+                </li>
+                <li class="info-item">
+                <b>Comments</b>
+                <span>${comments}</span>
+                </li>
+                <li class="info-item">
+                <b>Downloads</b>
+                <span>${downloads}</span>
+                </li>
+            </ul>
+        </a>
+    </li>`;
       }
     )
     .join('');
 }
-function onError() {
-  return Notiflix.Notify.failure(
-    'Sorry, there are no images matching your search query. Please try again.'
-  );
+function clearPhotoscontainer() {
+  refs.galleryContainer.innerHTML = '';
 }
+
 new SimpleLightbox('.gallery a', {
+  captions: true,
+  captionSelector: 'img',
+  captionType: 'attr',
   captionsData: 'alt',
-  captionsDelay: 250,
+  captionPosition: 'bottom',
+  captionDelay: 250,
 });
