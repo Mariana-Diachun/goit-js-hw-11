@@ -7,6 +7,15 @@ import FetchImages from './fetchImages.js';
 
 const fetchImages = new FetchImages();
 
+new SimpleLightbox('.gallery a', {
+  captions: true,
+  captionSelector: 'img',
+  captionType: 'attr',
+  captionsData: 'alt',
+  captionPosition: 'bottom',
+  captionDelay: 250,
+});
+
 refs.form.addEventListener('submit', onFormSubmit);
 refs.loadMoreBtn.addEventListener('click', onButtonLoadMore);
 
@@ -81,12 +90,3 @@ function renderPhotoCard(hits) {
 function clearPhotoscontainer() {
   refs.galleryContainer.innerHTML = '';
 }
-
-new SimpleLightbox('.gallery a', {
-  captions: true,
-  captionSelector: 'img',
-  captionType: 'attr',
-  captionsData: 'alt',
-  captionPosition: 'bottom',
-  captionDelay: 250,
-});
