@@ -1,0 +1,26 @@
+.search-form {
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  background-color: #3f08f6;
+  margin-bottom: 30px;
+  position: fixed;
+  width: 100%;
+}
+.search-form input {
+  padding: 5px;
+  outline: none;
+}
+
+.fixed__position {
+  position: relative;
+}
+
+.search-btn {
+  padding: 5px;
+}
+
+.search-icon {
+  text-align: center;
+}

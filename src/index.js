@@ -1,11 +1,11 @@
-import './css/styles.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import Notiflix from 'notiflix';
-import { refs } from './refs.js';
-import FetchImages from './fetchImages.js';
+import { refs } from './js/refs.js';
+import FetchImages from './js/fetchImages.js';
 
 const fetchImages = new FetchImages();
+
 removeButtonLoadMore();
 
 let gallery = new SimpleLightbox('.gallery a', {
@@ -34,29 +34,11 @@ function onFormSubmit(evt) {
       infoMessage(data);
       renderingCards(data);
     })
-    .catch(e =>
-      Notiflix.Notify.failure(
-        'Sorry, there are no images matching your search query. Please try again.'
-      )
-    );
+    .catch(e => {
+      removeButtonLoadMore();
+      onSearchError();
+    });
   addButtonLoadMore();
-}
-function removeButtonLoadMore() {
-  refs.loadMoreBtn.classList.add('visually-hidden');
-}
-function addButtonLoadMore() {
-  refs.loadMoreBtn.classList.remove('visually-hidden');
-}
-// function isHidden() {
-//     refs.loadMoreBtn.classList.add('visually-hidden');
-// }
-
-function infoMessage(data) {
-  const { hits, totalHits } = data;
-  if (hits.length === 0) {
-    throw new Error();
-  }
-  Notiflix.Notify.info(`Hooay! We found ${totalHits} images.`);
 }
 
 function onButtonLoadMore(evt) {
@@ -76,10 +58,10 @@ function renderingCards(data) {
     (markUp, hit) => markUp + renderPhotoCard(hit),
     ''
   );
-
   refs.galleryContainer.insertAdjacentHTML('beforeend', imagesMarkup);
   gallery.refresh();
 }
+
 function showLastPageMessage(data) {
   const { total, totalHits } = data;
   if (total === totalHits) {
@@ -130,4 +112,25 @@ function renderPhotoCard(data) {
 
 function clearPhotosContainer() {
   refs.galleryContainer.innerHTML = '';
+}
+
+function infoMessage(data) {
+  const { hits, totalHits } = data;
+  if (hits.length === 0) {
+    throw new Error();
+  }
+  Notiflix.Notify.info(`Hooay! We found ${totalHits} images.`);
+}
+
+function removeButtonLoadMore() {
+  refs.loadMoreBtn.classList.add('visually-hidden');
+}
+
+function addButtonLoadMore() {
+  refs.loadMoreBtn.classList.remove('visually-hidden');
+}
+function onSearchError() {
+  return Notiflix.Notify.failure(
+    'Sorry, there are no images matching your search query. Please try again.'
+  );
 }
