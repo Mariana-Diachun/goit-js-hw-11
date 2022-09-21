@@ -32,8 +32,10 @@ export default class FetchImages {
     const url = `${BASE_URL}?key=${apiKey}&q=${this.query}s&image_type=photo&per_page=${this.perPage}&page=${this.page}&orientation=horizontal&safesearch=true`;
     const response = await axios.get(url);
     const data = await response.data;
-    const hits = await data.hits;
-    // console.log(hits);
-    return hits;
+    // console.log(data);
+    return data;
+    // const hits = await data.hits;
+    // // console.log(hits);
+    // return hits;
   }
 }

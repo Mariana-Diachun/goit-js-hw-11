@@ -1,13 +1,14 @@
 import './css/styles.css';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import Notiflix from 'notiflix';
 import { refs } from './refs.js';
 import FetchImages from './fetchImages.js';
 
 const fetchImages = new FetchImages();
+removeButtonLoadMore();
 
-new SimpleLightbox('.gallery a', {
+let gallery = new SimpleLightbox('.gallery a', {
   captions: true,
   captionSelector: 'img',
   captionType: 'attr',
@@ -21,16 +22,41 @@ refs.loadMoreBtn.addEventListener('click', onButtonLoadMore);
 
 function onFormSubmit(evt) {
   evt.preventDefault();
-  clearPhotoscontainer();
+
+  clearPhotosContainer();
 
   fetchImages.query = evt.currentTarget.elements.searchQuery.value;
   fetchImages.resetPage();
-  if (fetchImages.query === '') {
-    return Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
+
+  fetchImages
+    .getPhotos()
+    .then(data => {
+      infoMessage(data);
+      renderingCards(data);
+    })
+    .catch(e =>
+      Notiflix.Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      )
     );
+  addButtonLoadMore();
+}
+function removeButtonLoadMore() {
+  refs.loadMoreBtn.classList.add('visually-hidden');
+}
+function addButtonLoadMore() {
+  refs.loadMoreBtn.classList.remove('visually-hidden');
+}
+// function isHidden() {
+//     refs.loadMoreBtn.classList.add('visually-hidden');
+// }
+
+function infoMessage(data) {
+  const { hits, totalHits } = data;
+  if (hits.length === 0) {
+    throw new Error();
   }
-  fetchImages.getPhotos().then(renderingCards);
+  Notiflix.Notify.info(`Hooay! We found ${totalHits} images.`);
 }
 
 function onButtonLoadMore(evt) {
@@ -38,27 +64,43 @@ function onButtonLoadMore(evt) {
   fetchImages.incrementPage();
   fetchImages
     .getPhotos()
-    .then(renderingCards)
-    .catch(error => console.log(error));
+    .then(data => {
+      renderingCards(data);
+    })
+    .catch(showLastPageMessage);
 }
 
-function renderingCards(hits) {
-  refs.galleryContainer.insertAdjacentHTML('beforeend', renderPhotoCard(hits));
+function renderingCards(data) {
+  const { hits } = data;
+  const imagesMarkup = hits.reduce(
+    (markUp, hit) => markUp + renderPhotoCard(hit),
+    ''
+  );
+
+  refs.galleryContainer.insertAdjacentHTML('beforeend', imagesMarkup);
+  gallery.refresh();
+}
+function showLastPageMessage(data) {
+  const { total, totalHits } = data;
+  if (total === totalHits) {
+    refs.loadMoreBtn.classList.add('visually-hidden');
+  }
+  Notiflix.Notify.failure(
+    "We're sorry, but you've reached the end of search results."
+  );
 }
 
-function renderPhotoCard(hits) {
-  return hits
-    .map(
-      ({
-        webformatURL,
-        largeImageURL,
-        tags,
-        likes,
-        views,
-        comments,
-        downloads,
-      }) => {
-        return `
+function renderPhotoCard(data) {
+  const {
+    webformatURL,
+    largeImageURL,
+    tags,
+    likes,
+    views,
+    comments,
+    downloads,
+  } = data;
+  const cardMarkup = `
         <li class="photo-card">
         <a class="gallery__link" href="${largeImageURL}">
             <img src="${webformatURL}" alt="${tags}" loading="lazy" class = "gallery__image" />
@@ -83,10 +125,9 @@ function renderPhotoCard(hits) {
             </ul>
         </a>
     </li>`;
-      }
-    )
-    .join('');
+  return cardMarkup;
 }
-function clearPhotoscontainer() {
+
+function clearPhotosContainer() {
   refs.galleryContainer.innerHTML = '';
 }
