@@ -25,7 +25,10 @@ function onFormSubmit(evt) {
 
   clearPhotosContainer();
 
-  fetchImages.query = evt.currentTarget.elements.searchQuery.value;
+  const searchValue = evt.currentTarget.elements.searchQuery.value;
+  if (!searchValue) return;
+  fetchImages.query = searchValue;
+
   fetchImages.resetPage();
 
   fetchImages
@@ -39,6 +42,8 @@ function onFormSubmit(evt) {
       onSearchError();
     });
   addButtonLoadMore();
+
+  evt.target.reset();
 }
 
 function onButtonLoadMore(evt) {
